@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Mac helper for SkyViper SE / JieLi-based video stream.
+Helper for SkyViper SE / JieLi-based video stream.
 
 The app uses a CTP control channel on TCP 3333 and RTSP video on port 554.
 This script sends the same OPEN_RT_STREAM command, then launches ffplay.
