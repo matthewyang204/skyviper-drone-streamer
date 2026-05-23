@@ -158,6 +158,7 @@ def push_frame(frames, jpg, stats=None):
 
 def xr872_reader(drone_ip, video_port, frames, stats):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 4 * 1024 * 1024)
     sock.bind(("", video_port))
     try:
         sock.sendto(XR872_VIDEO_START, (drone_ip, XR872_RXTX_PORT))
