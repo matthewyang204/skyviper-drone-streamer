@@ -42,6 +42,11 @@ RESOLUTION = {
     "fhd": (1920, 1080),
 }
 
+def checkIfListInStr(string, list):
+    for item in list:
+        if item in string:
+            return True
+    return False
 
 def ctp_packet(topic, op=None, params=None):
     topic_b = topic.encode("ascii")
@@ -131,21 +136,38 @@ def run_xr872_browser_stream(ip, http_host, http_port):
         print(f"{ip} looks like the Mac/client address; using XR872 drone address {drone_ip}.")
     print("192.168.28.x uses the XR872 UDP-JPEG stream, not SkyViper/Jieli RTSP.")
     print(f"Open http://{http_host}:{http_port}/ in your browser after frames start.")
-    helper = os.path.join(os.path.dirname(os.path.abspath(__file__)), "drone_streamer.py")
-    cmd = [
-        sys.executable,
-        helper,
-        "xr872",
-        "--drone-ip",
-        drone_ip,
-        "--http-host",
-        http_host,
-        "--http-port",
-        str(http_port),
-    ]
+    helper = os.path.join(os.path.dirname(sys.executable), "drone_streamer.py")
+    helperEXE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "drone_streamer")
+    cmd = companion_app_cmd(helper, helperEXE, drone_ip, http_host, http_port)
     print("Running:", " ".join(cmd))
     return subprocess.call(cmd)
 
+def companion_app_cmd(helper, helperEXE, drone_ip, http_host, http_port):
+    http_port = str(http_port)
+    if checkIfListInStr(sys.executable, ["python", "Python"]):
+        cmd = [
+            sys.executable,
+            helper,
+            "xr872",
+            "--drone-ip",
+            drone_ip,
+            "--http-host",
+            http_host,
+            "--http-port",
+            http_port,
+            ]
+    else:
+        cmd = [
+            helperEXE,
+            "xr872",
+            "--drone-ip",
+            drone_ip,
+            "--http-host",
+            http_host,
+            "--http-port",
+            http_port,
+            ]
+    return cmd
 
 def main():
     parser = argparse.ArgumentParser()
