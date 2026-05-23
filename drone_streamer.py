@@ -62,7 +62,7 @@ def rtsp_url(host, path, port=554):
 
 def try_ffplay(url):
     if not have("ffplay"):
-        print("ffplay not found. Install with: brew install ffmpeg")
+        print("ffplay not found. Install it to open the stream.")
         print(f"Try manually after installing: ffplay -fflags nobuffer -flags low_delay {url}")
         return 2
     cmd = ["ffplay", "-fflags", "nobuffer", "-flags", "low_delay", "-framedrop", url]
@@ -72,7 +72,7 @@ def try_ffplay(url):
 
 def probe_rtsp(host, ports=(554, 8554, 7070, 8080), paths=COMMON_RTSP_PATHS):
     if not have("ffprobe"):
-        print("ffprobe not found. Install with: brew install ffmpeg")
+        print("ffprobe not found. Install it in order to allow the program to probe the stream.")
         return None
 
     for port in ports:

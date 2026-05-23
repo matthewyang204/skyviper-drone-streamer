@@ -101,7 +101,7 @@ def have(cmd):
 
 def ffplay(url):
     if not have("ffplay"):
-        print("ffplay not found. Install it with: brew install ffmpeg")
+        print("ffplay not found. Install it to be able to open the stream.")
         print("Then try:", url)
         return 2
     cmd = [
