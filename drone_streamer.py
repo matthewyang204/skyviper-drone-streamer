@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Mac-side stream helpers for the drone families found in Tercaso Fly.
+Client-side stream helpers for the drone families found in Tercaso Fly.
 
 Usage examples:
   python3 drone_streamer.py auto --drone-ip 172.19.100.1
