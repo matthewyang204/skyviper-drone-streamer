@@ -241,21 +241,21 @@ def jllw_reader(listen_port, frames, stats):
 
 
 def run_mjpeg_mode(reader, args):
-    frames = Queue(maxsize=60)
+    frames = Queue(maxsize=1000)
     stats = {"frames": 0, "last_frame_at": 0.0}
     Thread(target=reader, args=args, daemon=True).start()
     serve_mjpeg(frames, "127.0.0.1", args[-1], stats)
 
 
 def mode_xr872(args):
-    frames = Queue(maxsize=60)
+    frames = Queue(maxsize=1000)
     stats = {"frames": 0, "last_frame_at": 0.0}
     Thread(target=xr872_reader, args=(args.drone_ip, args.video_port, frames, stats), daemon=True).start()
     serve_mjpeg(frames, args.http_host, args.http_port, stats)
 
 
 def mode_jllw(args):
-    frames = Queue(maxsize=60)
+    frames = Queue(maxsize=1000)
     stats = {"frames": 0, "last_frame_at": 0.0}
     Thread(target=jllw_reader, args=(args.listen_port, frames, stats), daemon=True).start()
     serve_mjpeg(frames, args.http_host, args.http_port, stats)
