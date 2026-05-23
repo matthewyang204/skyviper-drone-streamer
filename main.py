@@ -138,17 +138,17 @@ def run_xr872_browser_stream(ip, http_host, http_port):
     print(f"Open http://{http_host}:{http_port}/ in your browser after frames start.")
     helper = os.path.join(os.path.dirname(sys.executable), "drone_streamer.py")
     helperEXE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "drone_streamer")
-    cmd = companion_app_cmd(helper, helperEXE, drone_ip, http_host, http_port)
+    cmd = companion_app_cmd(helper, helperEXE, "xr872", drone_ip, http_host, http_port)
     print("Running:", " ".join(cmd))
     return subprocess.call(cmd)
 
-def companion_app_cmd(helper, helperEXE, drone_ip, http_host, http_port):
+def companion_app_cmd(helper, helperEXE, drone_model, drone_ip, http_host, http_port):
     http_port = str(http_port)
     if checkIfListInStr(sys.executable, ["python", "Python"]):
         cmd = [
             sys.executable,
             helper,
-            "xr872",
+            drone_model,
             "--drone-ip",
             drone_ip,
             "--http-host",
@@ -159,7 +159,7 @@ def companion_app_cmd(helper, helperEXE, drone_ip, http_host, http_port):
     else:
         cmd = [
             helperEXE,
-            "xr872",
+            drone_model,
             "--drone-ip",
             drone_ip,
             "--http-host",
