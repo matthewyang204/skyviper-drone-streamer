@@ -12,7 +12,7 @@ The program was initially vibe-coded by OpenAI's Codex because I had it look thr
 # Usage (no installation required; this is portable software)
 1. Clone the repo
 2. Switch your computer's WiFi to the drone-hosted WiFi AP (drone must be on)
-3. Run main.py with the drone's IP passed with the `--ip` flag
+3. Run `main.py` with the drone's IP passed with the `--ip` flag
 4. If the script opens `ffplay`, you are done. Otherwise, follow the instructions to open the port on `localhost` in your browser to view.
 5. Profit (you can now fly the drone as if you were doing such with the mobile app
 
