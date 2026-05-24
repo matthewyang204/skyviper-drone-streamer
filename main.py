@@ -169,8 +169,14 @@ def companion_app_cmd(helper, helperEXE, drone_model, drone_ip, http_host, http_
             ]
     return cmd
 
+def print_version():
+    print("SkyViper Drone FPV Streamer, version 0.1.0")
+    print("(C) 2026 Matthew Yang (杨佳明)")
+    sys.exit(0)
+
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--version", "-v", action="store_true", help="Show version and exit")
     parser.add_argument("--ip", default=DEFAULT_IP)
     parser.add_argument("--camera", choices=("front", "rear"), default="front")
     parser.add_argument("--format", choices=("h264", "jpeg"), default="h264")
@@ -182,6 +188,8 @@ def main():
     parser.add_argument("--http-port", type=int, default=8090)
     args = parser.parse_args()
 
+    if args.version:
+        print_version()
     if args.ip.startswith(XR872_NET_PREFIX):
         return run_xr872_browser_stream(args.ip, args.http_host, args.http_port)
 
