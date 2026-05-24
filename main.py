@@ -176,7 +176,7 @@ def print_version():
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--version", "-v", action="store_true", help="Show version and exit")
+    parser.add_argument("-v", "--version", action="store_true", help="Show version and exit")
     parser.add_argument("--ip", default=DEFAULT_IP)
     parser.add_argument("--camera", choices=("front", "rear"), default="front")
     parser.add_argument("--format", choices=("h264", "jpeg"), default="h264")
