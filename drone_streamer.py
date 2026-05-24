@@ -109,10 +109,16 @@ class MjpegHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/status":
             last_frame_at = self.stats.get("last_frame_at", 0.0) if self.stats else 0.0
+            last_battery_at = self.stats.get("last_battery_at", 0.0) if self.stats else 0.0
             age = None if last_frame_at == 0.0 else time.time() - last_frame_at
+            battery_age = None if last_battery_at == 0.0 else time.time() - last_battery_at
             body = {
                 "frames": self.stats.get("frames", 0) if self.stats else 0,
                 "last_frame_age_seconds": age,
+                "battery_percent": self.stats.get("battery_percent") if self.stats else None,
+                "battery_raw": self.stats.get("battery_raw") if self.stats else None,
+                "battery_gauge": battery_gauge(self.stats.get("battery_percent") if self.stats else None),
+                "last_battery_age_seconds": battery_age,
             }
             payload = (str(body) + "\n").encode("ascii")
             self.send_response(200)
@@ -156,6 +162,23 @@ def push_frame(frames, jpg, stats=None):
     frames.put(jpg)
 
 
+def battery_gauge(percent):
+    if percent is None:
+        return "[----------] waiting"
+    percent = max(0, min(100, int(percent)))
+    filled = round(percent / 10)
+    return f"[{'#' * filled}{'-' * (10 - filled)}] {percent}%"
+
+
+def update_battery(stats, raw_value):
+    if stats is None:
+        return
+    percent = max(0, min(100, raw_value & 0xFF))
+    stats["battery_raw"] = raw_value & 0xFF
+    stats["battery_percent"] = percent
+    stats["last_battery_at"] = time.time()
+
+
 def xr872_reader(drone_ip, video_port, frames, stats):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 4 * 1024 * 1024)
@@ -177,6 +200,7 @@ def xr872_reader(drone_ip, video_port, frames, stats):
             if len(pkt) < 4:
                 continue
 
+            update_battery(stats, pkt[3])
             is_last = pkt[1] == 1
             if len(pkt) != 1472 and not is_last:
                 continue
@@ -242,21 +266,21 @@ def jllw_reader(listen_port, frames, stats):
 
 def run_mjpeg_mode(reader, args):
     frames = Queue(maxsize=1000)
-    stats = {"frames": 0, "last_frame_at": 0.0}
+    stats = {"frames": 0, "last_frame_at": 0.0, "battery_percent": None, "battery_raw": None, "last_battery_at": 0.0}
     Thread(target=reader, args=args, daemon=True).start()
     serve_mjpeg(frames, "127.0.0.1", args[-1], stats)
 
 
 def mode_xr872(args):
     frames = Queue(maxsize=1000)
-    stats = {"frames": 0, "last_frame_at": 0.0}
+    stats = {"frames": 0, "last_frame_at": 0.0, "battery_percent": None, "battery_raw": None, "last_battery_at": 0.0}
     Thread(target=xr872_reader, args=(args.drone_ip, args.video_port, frames, stats), daemon=True).start()
     serve_mjpeg(frames, args.http_host, args.http_port, stats)
 
 
 def mode_jllw(args):
     frames = Queue(maxsize=1000)
-    stats = {"frames": 0, "last_frame_at": 0.0}
+    stats = {"frames": 0, "last_frame_at": 0.0, "battery_percent": None, "battery_raw": None, "last_battery_at": 0.0}
     Thread(target=jllw_reader, args=(args.listen_port, frames, stats), daemon=True).start()
     serve_mjpeg(frames, args.http_host, args.http_port, stats)
 
