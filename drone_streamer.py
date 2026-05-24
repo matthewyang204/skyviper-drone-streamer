@@ -119,6 +119,8 @@ class MjpegHandler(BaseHTTPRequestHandler):
                 "battery_raw": self.stats.get("battery_raw") if self.stats else None,
                 "battery_gauge": battery_gauge(self.stats.get("battery_percent") if self.stats else None),
                 "last_battery_age_seconds": battery_age,
+                "rxtx_packets": self.stats.get("rxtx_packets", 0) if self.stats else 0,
+                "last_rxtx_hex": self.stats.get("last_rxtx_hex") if self.stats else None,
             }
             payload = (str(body) + "\n").encode("ascii")
             self.send_response(200)
@@ -173,10 +175,29 @@ def battery_gauge(percent):
 def update_battery(stats, raw_value):
     if stats is None:
         return
-    percent = max(0, min(100, raw_value & 0xFF))
     stats["battery_raw"] = raw_value & 0xFF
-    stats["battery_percent"] = percent
+    stats["battery_percent"] = None if stats["battery_raw"] == 0 else min(100, stats["battery_raw"])
     stats["last_battery_at"] = time.time()
+
+
+def xr872_rxtx_reader(drone_ip, stats):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    try:
+        sock.bind(("", XR872_RXTX_PORT))
+        print(f"Listening for XR872 RxTx packets on UDP {XR872_RXTX_PORT}", flush=True)
+        while True:
+            pkt, addr = sock.recvfrom(1024)
+            if addr[0] != drone_ip or not pkt:
+                continue
+            stats["rxtx_packets"] = stats.get("rxtx_packets", 0) + 1
+            stats["last_rxtx_at"] = time.time()
+            stats["last_rxtx_hex"] = pkt[:32].hex(" ")
+    except OSError as exc:
+        stats["rxtx_error"] = str(exc)
+        print(f"XR872 RxTx listener unavailable on UDP {XR872_RXTX_PORT}: {exc}", flush=True)
+    finally:
+        sock.close()
 
 
 def xr872_reader(drone_ip, video_port, frames, stats):
@@ -266,21 +287,22 @@ def jllw_reader(listen_port, frames, stats):
 
 def run_mjpeg_mode(reader, args):
     frames = Queue(maxsize=1000)
-    stats = {"frames": 0, "last_frame_at": 0.0, "battery_percent": None, "battery_raw": None, "last_battery_at": 0.0}
+    stats = {"frames": 0, "last_frame_at": 0.0, "battery_percent": None, "battery_raw": None, "last_battery_at": 0.0, "rxtx_packets": 0, "last_rxtx_hex": None}
     Thread(target=reader, args=args, daemon=True).start()
     serve_mjpeg(frames, "127.0.0.1", args[-1], stats)
 
 
 def mode_xr872(args):
     frames = Queue(maxsize=1000)
-    stats = {"frames": 0, "last_frame_at": 0.0, "battery_percent": None, "battery_raw": None, "last_battery_at": 0.0}
+    stats = {"frames": 0, "last_frame_at": 0.0, "battery_percent": None, "battery_raw": None, "last_battery_at": 0.0, "rxtx_packets": 0, "last_rxtx_hex": None}
+    Thread(target=xr872_rxtx_reader, args=(args.drone_ip, stats), daemon=True).start()
     Thread(target=xr872_reader, args=(args.drone_ip, args.video_port, frames, stats), daemon=True).start()
     serve_mjpeg(frames, args.http_host, args.http_port, stats)
 
 
 def mode_jllw(args):
     frames = Queue(maxsize=1000)
-    stats = {"frames": 0, "last_frame_at": 0.0, "battery_percent": None, "battery_raw": None, "last_battery_at": 0.0}
+    stats = {"frames": 0, "last_frame_at": 0.0, "battery_percent": None, "battery_raw": None, "last_battery_at": 0.0, "rxtx_packets": 0, "last_rxtx_hex": None}
     Thread(target=jllw_reader, args=(args.listen_port, frames, stats), daemon=True).start()
     serve_mjpeg(frames, args.http_host, args.http_port, stats)
 
