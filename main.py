@@ -48,6 +48,14 @@ def checkIfListInStr(string, list):
             return True
     return False
 
+def is_port_in_use(port, host="127.0.0.1"):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        try:
+            sock.bind((host, port))
+            return False
+        except OSError:
+            return True
+
 def ctp_packet(topic, op=None, params=None):
     topic_b = topic.encode("ascii")
     if op is None:
@@ -129,16 +137,24 @@ def xr872_drone_ip(ip):
         return XR872_NET_PREFIX + "1"
     return ip
 
+def get_spare_port(start=8090, host="127.0.0.1"):
+    port = start
+    while port < 65535:
+        if not is_port_in_use(port, host):
+            return port
+        port += 1
+    raise RuntimeError("No spare port found")
 
 def run_xr872_browser_stream(ip, http_host, http_port):
     drone_ip = xr872_drone_ip(ip)
+    spare_port = get_spare_port(http_port, http_host)
     if drone_ip != ip:
         print(f"{ip} looks like the Mac/client address; using XR872 drone address {drone_ip}.")
     print("192.168.28.x uses the XR872 UDP-JPEG stream, not SkyViper/Jieli RTSP.")
-    print(f"Open http://{http_host}:{http_port}/ in your browser after frames start.")
+    print(f"Open http://{http_host}:{spare_port}/ in your browser after frames start.")
     helper = os.path.join(os.path.dirname(sys.executable), "drone_streamer.py")
     helperEXE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "drone_streamer")
-    cmd = companion_app_cmd(helper, helperEXE, "xr872", drone_ip, http_host, http_port)
+    cmd = companion_app_cmd(helper, helperEXE, "xr872", drone_ip, http_host, spare_port)
     print("Running:", " ".join(cmd))
     return subprocess.call(cmd)
 
