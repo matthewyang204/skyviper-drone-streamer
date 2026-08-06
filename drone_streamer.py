@@ -236,7 +236,7 @@ def xr872_reader(drone_ip, video_port, frames, stats):
                 continue
             last_pkt = pkt_no
 
-            buf.extend(pkt[4:])
+            buf += pkt[4:]
             if is_last and len(buf) > 4 and buf[:2] == b"\xff\xd8" and buf[-2:] == b"\xff\xd9":
                 push_frame(frames, bytes(buf), stats)
                 now = time.time()
