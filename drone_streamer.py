@@ -136,7 +136,10 @@ class MjpegHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "multipart/x-mixed-replace; boundary=frame")
         self.end_headers()
         while True:
-            jpg = self.frames.get()
+            try:
+                jpg = self.frames.get_nowait()
+            except:
+                continue
             self.wfile.write(b"--frame\r\n")
             self.wfile.write(b"Content-Type: image/jpeg\r\n")
             self.wfile.write(f"Content-Length: {len(jpg)}\r\n\r\n".encode("ascii"))
